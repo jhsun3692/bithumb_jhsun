@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">전략 성과 대시보드</h1>
+
+    <!-- 전체 포트폴리오 요약 -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted small">총 투자금</h6>
+                    <h4 class="card-title mb-0">₩{{ "{:,.0f}".format(total_invested) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted small">현재 평가액</h6>
+                    <h4 class="card-title mb-0">₩{{ "{:,.0f}".format(current_value) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card {% if total_profit >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 small">총 수익</h6>
+                    <h4 class="card-title mb-0">₩{{ "{:,.0f}".format(total_profit) }}</h4>
+                    <small>{{ "{:+.2f}".format(roi) }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted small">KRW 잔고</h6>
+                    <h4 class="card-title mb-1">₩{{ "{:,.0f}".format(krw_balance) }}</h4>
+                    <small class="text-muted">사용가능: ₩{{ "{:,.0f}".format(krw_available) }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API 에러 메시지 -->
+    {% if api_error %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>API 오류:</strong> {{ api_error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- 보유 자산 목록 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">보유 자산</h5>
+        </div>
+        <div class="card-body">
+            {% if balances %}
+
+            <!-- Desktop Table View -->
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>코인</th>
+                                <th class="text-end">보유량</th>
+                                <th class="text-end">평균 매수가</th>
+                                <th class="text-end">현재가</th>
+                                <th class="text-end">평가액</th>
+                                <th class="text-end">수익률</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for balance in balances %}
+                            <tr>
+                                <td><strong>{{ balance.coin }}</strong></td>
+                                <td class="text-end"><small>{{ "{:.8f}".format(balance.total) }}</small></td>
+                                <td class="text-end"><small>₩{{ "{:,.0f}".format(balance.avg_buy_price) if balance.avg_buy_price else '-' }}</small></td>
+                                <td class="text-end"><small>₩{{ "{:,.0f}".format(balance.current_price) }}</small></td>
+                                <td class="text-end"><small>₩{{ "{:,.0f}".format(balance.current_value) }}</small></td>
+                                <td class="text-end">
+                                    {% if balance.avg_buy_price %}
+                                    {% set profit_pct = ((balance.current_price - balance.avg_buy_price) / balance.avg_buy_price) * 100 %}
+                                    <span class="badge {% if profit_pct >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ "{:+.2f}".format(profit_pct) }}%
+                                    </span>
+                                    {% else %}
+                                    <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                {% for balance in balances %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2"
+                         style="background: {% if balance.avg_buy_price %}{% set profit_pct = ((balance.current_price - balance.avg_buy_price) / balance.avg_buy_price) * 100 %}{% if profit_pct > 0 %}#d1fae5{% elif profit_pct < 0 %}#fee2e2{% else %}#f3f4f6{% endif %}{% else %}#f3f4f6{% endif %};">
+                        <h6 class="mb-0"><strong>{{ balance.coin }}</strong></h6>
+                        {% if balance.avg_buy_price %}
+                        {% set profit_pct = ((balance.current_price - balance.avg_buy_price) / balance.avg_buy_price) * 100 %}
+                        <span class="badge {% if profit_pct >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ "{:+.2f}".format(profit_pct) }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="small text-muted">보유량</div>
+                                <div class="fw-semibold small">{{ "{:.8f}".format(balance.total) }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">평가액</div>
+                                <div class="fw-semibold small">₩{{ "{:,.0f}".format(balance.current_value) }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">평균 매수가</div>
+                                <div class="fw-semibold small">₩{{ "{:,.0f}".format(balance.avg_buy_price) if balance.avg_buy_price else '-' }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">현재가</div>
+                                <div class="fw-semibold small">₩{{ "{:,.0f}".format(balance.current_price) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <p class="text-muted text-center py-3">보유 중인 코인이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 활성 전략 현황 -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">활성 전략</h5>
+            <a href="/strategy" class="btn btn-sm btn-primary">전략 관리</a>
+        </div>
+        <div class="card-body">
+            {% if active_strategies %}
+
+            <!-- Desktop Table View -->
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>전략명</th>
+                                <th>코인</th>
+                                <th>유형</th>
+                                <th class="text-end">투자금</th>
+                                <th class="text-end">현재가치</th>
+                                <th class="text-end">수익</th>
+                                <th class="text-end">ROI</th>
+                                <th class="text-center">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for strat in active_strategies %}
+                            <tr>
+                                <td><strong class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ strat.name }}">{{ strat.name }}</strong></td>
+                                <td><span class="badge bg-dark">{{ strat.coin }}</span></td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {% if strat.strategy_type == 'moving_average' %}MA
+                                        {% elif strat.strategy_type == 'rsi' %}RSI
+                                        {% elif strat.strategy_type == 'bollinger' %}BB
+                                        {% elif strat.strategy_type == 'macd' %}MACD
+                                        {% elif strat.strategy_type == 'stochastic' %}STOCH
+                                        {% elif strat.strategy_type == 'composite' %}복합
+                                        {% else %}{{ strat.strategy_type }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-end"><small>₩{{ "{:,.0f}".format(strat.total_invested) }}</small></td>
+                                <td class="text-end"><small>₩{{ "{:,.0f}".format(strat.current_value) }}</small></td>
+                                <td class="text-end">
+                                    <span class="{% if strat.total_profit >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                        ₩{{ "{:+,.0f}".format(strat.total_profit) }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge {% if strat.roi >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ "{:+.2f}".format(strat.roi) }}%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if strat.enabled %}
+                                    <span class="badge bg-success">활성</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">비활성</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                {% for strat in active_strategies %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2"
+                         style="background: {% if strat.roi > 0 %}#d1fae5{% elif strat.roi < 0 %}#fee2e2{% else %}#f3f4f6{% endif %};">
+                        <div>
+                            <span class="badge bg-dark me-1">{{ strat.coin }}</span>
+                            <span class="badge bg-secondary">
+                                {% if strat.strategy_type == 'moving_average' %}MA
+                                {% elif strat.strategy_type == 'rsi' %}RSI
+                                {% elif strat.strategy_type == 'bollinger' %}BB
+                                {% elif strat.strategy_type == 'macd' %}MACD
+                                {% elif strat.strategy_type == 'stochastic' %}STOCH
+                                {% elif strat.strategy_type == 'composite' %}복합
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            {% if strat.enabled %}
+                            <span class="badge bg-success">활성</span>
+                            {% else %}
+                            <span class="badge bg-secondary">비활성</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+                        <h6 class="card-title text-truncate mb-3" title="{{ strat.name }}">{{ strat.name }}</h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="small text-muted">투자금</div>
+                                <div class="fw-semibold small">₩{{ "{:,.0f}".format(strat.total_invested) }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">현재가치</div>
+                                <div class="fw-semibold small">₩{{ "{:,.0f}".format(strat.current_value) }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">수익</div>
+                                <div class="fw-bold {% if strat.total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    ₩{{ "{:+,.0f}".format(strat.total_profit) }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">수익률</div>
+                                <div>
+                                    <span class="badge {% if strat.roi >= 0 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                                        {{ "{:+.2f}".format(strat.roi) }}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <p class="text-muted text-center py-3">활성화된 전략이 없습니다. <a href="/strategy">전략을 생성</a>하세요.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 최근 전략 실행 로그 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">최근 전략 실행 기록</h5>
+        </div>
+        <div class="card-body">
+            {% if execution_logs %}
+
+            <!-- Desktop Table View -->
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>시간</th>
+                                <th>전략</th>
+                                <th>코인</th>
+                                <th>신호</th>
+                                <th>결과</th>
+                                <th>메시지</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in execution_logs %}
+                            <tr>
+                                <td><small>{{ log.created_at.strftime('%m-%d %H:%M') }}</small></td>
+                                <td><small class="text-truncate d-inline-block" style="max-width: 120px;" title="{{ log.strategy_name }}">{{ log.strategy_name }}</small></td>
+                                <td><span class="badge bg-secondary">{{ log.coin }}</span></td>
+                                <td>
+                                    {% if log.signal == 'buy' %}
+                                    <span class="badge bg-success">매수</span>
+                                    {% elif log.signal == 'sell' %}
+                                    <span class="badge bg-danger">매도</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">대기</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.success %}
+                                    <span class="text-success">✓</span>
+                                    {% else %}
+                                    <span class="text-danger">✗</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ log.message or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mobile List View -->
+            <div class="d-md-none">
+                {% for log in execution_logs %}
+                <div class="border-bottom py-2">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div>
+                            <span class="badge bg-secondary me-1">{{ log.coin }}</span>
+                            {% if log.signal == 'buy' %}
+                            <span class="badge bg-success">매수</span>
+                            {% elif log.signal == 'sell' %}
+                            <span class="badge bg-danger">매도</span>
+                            {% else %}
+                            <span class="badge bg-secondary">대기</span>
+                            {% endif %}
+                            {% if log.success %}
+                            <span class="text-success">✓</span>
+                            {% else %}
+                            <span class="text-danger">✗</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ log.created_at.strftime('%m-%d %H:%M') }}</small>
+                    </div>
+                    <div class="small text-muted">{{ log.strategy_name }}</div>
+                    {% if log.message %}
+                    <div class="small text-muted">{{ log.message }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <p class="text-muted text-center py-3">실행 기록이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}사용자 관리 - Bithumb 자동매매{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h2><i class="bi bi-shield-check"></i> 사용자 관리 (관리자)</h2>
+        <p class="text-muted">사용자 승인 및 관리</p>
+    </div>
+</div>
+
+{% if request.query_params.get('success') == 'approved' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> 사용자가 승인되었습니다!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif request.query_params.get('success') == 'rejected' %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <i class="bi bi-info-circle"></i> 사용자가 거부되었습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- 승인 대기 중인 사용자 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-hourglass-split text-warning"></i> 승인 대기 중 ({{ pending_users|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending_users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>사용자명</th>
+                                <th>이메일</th>
+                                <th>가입일</th>
+                                <th>API 키 설정</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in pending_users %}
+                            <tr>
+                                <td><strong>{{ user.username }}</strong></td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if user.bithumb_api_key %}
+                                    <span class="badge bg-success">설정됨</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">미설정</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="/admin/users/approve/{{ user.id }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check-circle"></i> 승인
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/admin/users/reject/{{ user.id }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('이 사용자를 거부하시겠습니까?')">
+                                            <i class="bi bi-x-circle"></i> 거부
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox display-4"></i>
+                    <p class="mt-3">승인 대기 중인 사용자가 없습니다.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 승인된 사용자 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle text-success"></i> 승인된 사용자 ({{ approved_users|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if approved_users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>사용자명</th>
+                                <th>이메일</th>
+                                <th>가입일</th>
+                                <th>API 키</th>
+                                <th>2FA</th>
+                                <th>상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in approved_users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-danger ms-1">관리자</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if user.bithumb_api_key %}
+                                    <span class="badge bg-success">설정됨</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">미설정</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.otp_enabled %}
+                                    <span class="badge bg-success">활성</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">비활성</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">활성</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">비활성</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not user.is_admin %}
+                                    <form method="POST" action="/admin/users/toggle-active/{{ user.id }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            {% if user.is_active %}
+                                            <i class="bi bi-pause"></i> 비활성화
+                                            {% else %}
+                                            <i class="bi bi-play"></i> 활성화
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox display-4"></i>
+                    <p class="mt-3">승인된 사용자가 없습니다.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

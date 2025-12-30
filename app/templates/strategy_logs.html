@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}전략 로그 - {{ strategy.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="bi bi-list-ul"></i> 전략 실행 로그</h2>
+                <p class="text-muted">{{ strategy.name }} ({{ strategy.coin }})</p>
+            </div>
+            <a href="/strategy" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 전략 목록으로
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Info Card -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">전략 타입</h6>
+                <p class="card-text">
+                    {% if strategy.strategy_type == 'bollinger' %}
+                    <span class="badge bg-primary">볼린저 밴드</span>
+                    {% elif strategy.strategy_type == 'moving_average' %}
+                    <span class="badge bg-success">이동평균</span>
+                    {% elif strategy.strategy_type == 'rsi' %}
+                    <span class="badge bg-warning">RSI</span>
+                    {% elif strategy.strategy_type == 'macd' %}
+                    <span class="badge bg-info">MACD</span>
+                    {% elif strategy.strategy_type == 'stochastic' %}
+                    <span class="badge bg-secondary">Stochastic</span>
+                    {% elif strategy.strategy_type == 'composite' %}
+                    <span class="badge bg-dark">복합</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">상태</h6>
+                <p class="card-text">
+                    {% if strategy.enabled %}
+                    <span class="badge bg-success">활성</span>
+                    {% else %}
+                    <span class="badge bg-secondary">비활성</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">생성일</h6>
+                <p class="card-text"><small>{{ strategy.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">파라미터</h6>
+                <p class="card-text">
+                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#paramsCollapse">
+                        <i class="bi bi-gear"></i> 보기
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parameters Collapse -->
+<div class="collapse mb-4" id="paramsCollapse">
+    <div class="card">
+        <div class="card-body">
+            <h6>전략 파라미터</h6>
+            <pre class="mb-0"><code>{{ params | tojson(indent=2) }}</code></pre>
+        </div>
+    </div>
+</div>
+
+<!-- Execution Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">총 실행 횟수</h6>
+                <h3 class="card-title">{{ total_executions }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2">매수 신호</h6>
+                <h3 class="card-title">{{ buy_signals }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2">매도 신호</h6>
+                <h3 class="card-title">{{ sell_signals }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">대기 신호</h6>
+                <h3 class="card-title">{{ hold_signals }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Execution Logs Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> 실행 기록</h5>
+    </div>
+    <div class="card-body">
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>실행 시간</th>
+                        <th>신호</th>
+                        <th>결과</th>
+                        <th>메시지</th>
+                        <th>상세</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% if log.signal == 'buy' %}
+                            <span class="badge bg-success">매수</span>
+                            {% elif log.signal == 'sell' %}
+                            <span class="badge bg-danger">매도</span>
+                            {% else %}
+                            <span class="badge bg-secondary">대기</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.success %}
+                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> 성공</span>
+                            {% else %}
+                            <span class="text-danger"><i class="bi bi-x-circle-fill"></i> 실패</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ log.message or '-' }}</small>
+                        </td>
+                        <td>
+                            {% if log.details %}
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#details{{ log.id }}">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if log.details %}
+                    <tr class="collapse" id="details{{ log.id }}">
+                        <td colspan="5">
+                            <div class="bg-light p-3 rounded">
+                                <strong>상세 정보:</strong>
+                                <pre class="mb-0 mt-2"><code>{{ (log.details | fromjson) | tojson(indent=2) }}</code></pre>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="/strategy/logs/{{ strategy.id }}?page={{ page - 1 }}">이전</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">페이지 {{ page }}</span>
+                </li>
+
+                {% if logs|length >= per_page %}
+                <li class="page-item">
+                    <a class="page-link" href="/strategy/logs/{{ strategy.id }}?page={{ page + 1 }}">다음</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox display-4"></i>
+            <p class="mt-3">아직 실행 기록이 없습니다.</p>
+            <p>전략이 활성화되면 자동으로 기록됩니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

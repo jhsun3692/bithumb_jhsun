@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}프로필 - Bithumb 자동매매{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h2><i class="bi bi-person-circle"></i> 프로필</h2>
+        <p class="text-muted">회원 정보 및 API 설정을 관리하세요</p>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+{% if request.query_params.get('success') == 'profile' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> 프로필이 성공적으로 업데이트되었습니다!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif request.query_params.get('success') == 'password' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> 비밀번호가 성공적으로 변경되었습니다!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif request.query_params.get('success') == 'api' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> API 키가 성공적으로 저장되었습니다!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif request.query_params.get('success') == '2fa_enabled' %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle"></i> 2단계 인증이 성공적으로 활성화되었습니다!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif request.query_params.get('success') == '2fa_disabled' %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <i class="bi bi-info-circle"></i> 2단계 인증이 비활성화되었습니다.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- 회원 정보 수정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-person"></i> 회원 정보
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/profile/update">
+                    <div class="mb-3">
+                        <label class="form-label">사용자명</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                        <small class="text-muted">사용자명은 변경할 수 없습니다</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">이메일</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save"></i> 정보 저장
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 비밀번호 변경 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-key"></i> 비밀번호 변경
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/profile/change-password">
+                    <div class="mb-3">
+                        <label class="form-label">현재 비밀번호</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">새 비밀번호</label>
+                        <input type="password" class="form-control" name="new_password" minlength="6" required>
+                        <small class="text-muted">최소 6자 이상</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">새 비밀번호 확인</label>
+                        <input type="password" class="form-control" name="confirm_password" minlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-shield-check"></i> 비밀번호 변경
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google OTP 2FA 설정 -->
+    <div class="col-lg-12 mb-4">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-check"></i> Google OTP 2단계 인증 (2FA)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if user.otp_enabled %}
+                <!-- 2FA가 활성화된 경우 -->
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>2단계 인증이 활성화되어 있습니다.</strong>
+                    로그인 시 OTP 코드가 필요합니다.
+                </div>
+                <form method="POST" action="/profile/disable-2fa">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('2단계 인증을 비활성화하시겠습니까?')">
+                        <i class="bi bi-shield-x"></i> 2FA 비활성화
+                    </button>
+                </form>
+                {% else %}
+                <!-- 2FA가 비활성화된 경우 -->
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>보안 강화를 위해 2단계 인증을 활성화하세요.</strong>
+                    Google Authenticator 앱을 사용하여 로그인 시 추가 보안을 제공합니다.
+                </div>
+
+                {% if qr_code_uri %}
+                <!-- QR 코드 표시 -->
+                <div class="text-center mb-4">
+                    <h6 class="mb-3">Google Authenticator 앱에서 아래 QR 코드를 스캔하세요</h6>
+                    <div class="mb-3">
+                        <img src="{{ qr_code_uri }}" alt="2FA QR Code" class="img-fluid" style="max-width: 250px;">
+                    </div>
+                    <p class="small text-muted">
+                        또는 수동으로 이 키를 입력하세요:<br>
+                        <code>{{ otp_secret }}</code>
+                    </p>
+
+                    <form method="POST" action="/profile/verify-2fa" class="mt-4">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <label class="form-label">인증 코드 (6자리)</label>
+                                <input type="text" class="form-control text-center" name="otp_code"
+                                       pattern="[0-9]{6}" maxlength="6" required
+                                       placeholder="000000" autofocus>
+                                <small class="text-muted">Google Authenticator 앱에 표시된 6자리 코드를 입력하세요</small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success mt-3">
+                            <i class="bi bi-check-circle"></i> 2FA 활성화
+                        </button>
+                        <a href="/profile" class="btn btn-secondary mt-3">취소</a>
+                    </form>
+                </div>
+                {% else %}
+                <!-- 2FA 설정 시작 버튼 -->
+                <form method="POST" action="/profile/setup-2fa">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-shield-plus"></i> 2FA 설정 시작
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bithumb API 설정 -->
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-lock"></i> Bithumb API 설정
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>중요:</strong> API 키는 암호화되어 저장되며, 거래 실행에 사용됩니다.
+                    빗썸에서 API 키를 발급받으려면
+                    <a href="https://www.bithumb.com/mypage/api_management/api_keys" target="_blank" class="alert-link">
+                        여기를 클릭하세요 <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+
+                <form method="POST" action="/profile/update-api">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">API Key (Connect Key)</label>
+                            <input type="text" class="form-control" name="api_key"
+                                   value="{% if user.bithumb_api_key %}{{ user.bithumb_api_key[:8] }}...{{ user.bithumb_api_key[-4:] }}{% endif %}"
+                                   placeholder="빗썸 API Key를 입력하세요">
+                            {% if user.bithumb_api_key %}
+                            <small class="text-success">
+                                <i class="bi bi-check-circle"></i> API Key 설정됨
+                            </small>
+                            {% else %}
+                            <small class="text-muted">API Key가 설정되지 않았습니다</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">API Secret (Secret Key)</label>
+                            <input type="password" class="form-control" name="api_secret"
+                                   placeholder="빗썸 API Secret을 입력하세요">
+                            {% if user.bithumb_api_secret %}
+                            <small class="text-success">
+                                <i class="bi bi-check-circle"></i> API Secret 설정됨
+                            </small>
+                            {% else %}
+                            <small class="text-muted">API Secret이 설정되지 않았습니다</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>보안 주의:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>API 키는 절대 다른 사람과 공유하지 마세요</li>
+                            <li>정기적으로 API 키를 변경하는 것을 권장합니다</li>
+                            <li>빗썸 API 설정에서 IP 화이트리스트를 설정하면 더 안전합니다</li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-cloud-upload"></i> API 키 저장
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
