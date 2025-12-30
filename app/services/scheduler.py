@@ -5,6 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from filelock import FileLock, Timeout
 from app.core.database import SessionLocal
 from app.core.config import get_settings
 from app.models.database import TradingStrategy as TradingStrategyModel, StrategyExecutionLog
@@ -30,6 +31,7 @@ class TradingScheduler:
     def __init__(self):
         """Initialize the scheduler."""
         self.scheduler: Optional[BackgroundScheduler] = None
+        self.lock: Optional[FileLock] = None
 
     def start(self):
         """Start the scheduler."""
@@ -39,6 +41,20 @@ class TradingScheduler:
 
         if self.scheduler and self.scheduler.running:
             logger.warning("Scheduler is already running")
+            return
+
+        # Try to acquire file lock to ensure only one worker runs the scheduler
+        lock_file_path = "/tmp/trading_scheduler.lock"
+        self.lock = FileLock(lock_file_path, timeout=0)
+
+        try:
+            # Try to acquire lock (non-blocking)
+            self.lock.acquire()
+            logger.info("Scheduler lock acquired - this worker will run the scheduler")
+        except Timeout:
+            # Another worker already has the lock
+            logger.info("Scheduler is already running in another worker - skipping")
+            self.lock = None
             return
 
         self.scheduler = BackgroundScheduler(timezone=settings.scheduler_timezone)
@@ -62,6 +78,11 @@ class TradingScheduler:
         if self.scheduler and self.scheduler.running:
             self.scheduler.shutdown()
             logger.info("Scheduler stopped")
+
+        # Release the file lock if acquired
+        if self.lock and self.lock.is_locked:
+            self.lock.release()
+            logger.info("Scheduler lock released")
 
     def run_strategy_checks(self):
         """Run checks for all enabled strategies."""
