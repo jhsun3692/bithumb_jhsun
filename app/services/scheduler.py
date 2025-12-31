@@ -245,10 +245,42 @@ class TradingScheduler:
             strategy_types = params.get("strategy_types", [])
             min_confirmations = params.get("min_confirmations", 2)
 
+            # Handle case where strategy_types might be a JSON string
+            if isinstance(strategy_types, str):
+                try:
+                    strategy_types = json.loads(strategy_types)
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid strategy_types JSON for {strategy_model.name}: {strategy_types}")
+                    return
+
             sub_strategies = []
             for st in strategy_types:
+                # Ensure st is a dictionary
+                if isinstance(st, str):
+                    try:
+                        st = json.loads(st)
+                    except json.JSONDecodeError:
+                        logger.error(f"Invalid strategy definition: {st}")
+                        continue
+
+                if not isinstance(st, dict):
+                    logger.error(f"Strategy definition is not a dict: {st}")
+                    continue
+
                 st_type = st.get("type")
                 st_params = st.get("params", {})
+
+                # Handle case where params might also be a JSON string
+                if isinstance(st_params, str):
+                    try:
+                        st_params = json.loads(st_params)
+                    except json.JSONDecodeError:
+                        logger.error(f"Invalid params JSON for strategy type {st_type}: {st_params}")
+                        st_params = {}
+
+                if not isinstance(st_params, dict):
+                    logger.error(f"Strategy params is not a dict for {st_type}: {st_params}")
+                    st_params = {}
 
                 if st_type == "moving_average":
                     sub_strategies.append(MovingAverageStrategy(
