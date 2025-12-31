@@ -486,8 +486,12 @@ async def strategy_page(request: Request, db: Session = Depends(get_db)):
     from app.models.database import TradingStrategy, Order, OrderType, OrderStatus
     strategies = db.query(TradingStrategy).all()
 
-    # Get available coins from Bithumb (public API, no auth needed)
-    available_coins = bithumb_api.get_available_coins()
+    # Get available coins from database
+    from app.services.coin_sync import get_coins_from_db, get_coin_names_dict
+
+    coins = get_coins_from_db(db, active_only=True)
+    available_coins = [coin.symbol for coin in coins]
+    coin_names_dict = get_coin_names_dict(db)
 
     # Calculate performance for each strategy
     strategy_performances = []
@@ -539,7 +543,8 @@ async def strategy_page(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "user": user,
             "strategy_performances": strategy_performances,
-            "available_coins": available_coins
+            "available_coins": available_coins,
+            "coin_names_dict": coin_names_dict
         }
     )
 

@@ -19,7 +19,7 @@
 
 <!-- Unified Strategy Creation -->
 <div class="row mb-4">
-    <div class="col-lg-10 mx-auto">
+    <div class="col-lg-12 mx-auto">
         <div class="card card-custom">
             <div class="card-body">
                 <h5 class="card-title">
@@ -50,18 +50,18 @@
                             <select class="form-select" name="coin" required>
                                 {% if available_coins %}
                                     {% for coin in available_coins %}
-                                    <option value="{{ coin }}">{{ coin }}</option>
+                                    <option value="{{ coin }}">{{ coin }} {% if coin in coin_names_dict and coin_names_dict[coin].korean %}- {{ coin_names_dict[coin].korean }}{% endif %}</option>
                                     {% endfor %}
                                 {% else %}
-                                    <option value="BTC">BTC</option>
-                                    <option value="ETH">ETH</option>
-                                    <option value="XRP">XRP</option>
-                                    <option value="ADA">ADA</option>
-                                    <option value="DOGE">DOGE</option>
-                                    <option value="SOL">SOL</option>
+                                    <option value="BTC">BTC - 비트코인</option>
+                                    <option value="ETH">ETH - 이더리움</option>
+                                    <option value="XRP">XRP - 리플</option>
+                                    <option value="ADA">ADA - 에이다</option>
+                                    <option value="DOGE">DOGE - 도지코인</option>
+                                    <option value="SOL">SOL - 솔라나</option>
                                 {% endif %}
                             </select>
-                            <small class="text-muted">빗썸에서 거래 가능한 {{ available_coins|length if available_coins else 6 }}개의 코인</small>
+                            <small class="text-muted">빗썸에서 거래 가능한 {{ available_coins|length if available_coins else 6 }}개의 코인 (주요 코인 상단 표시)</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">1회 매수 금액 (KRW)</label>

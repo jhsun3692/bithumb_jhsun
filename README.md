@@ -76,37 +76,51 @@
 
 ## 🚀 설치 및 실행
 
-### 1. 환경 설정
+### 개발 환경 (로컬)
 
 ```bash
-# 저장소 클론
+# 1. 저장소 클론
 git clone <repository-url>
 cd bithumb_jhsun
 
-# 환경 변수 설정
+# 2. 환경 변수 설정
 cp .env.example .env
 # .env 파일을 열어 빗썸 API 키를 입력하세요
+
+# 3. 의존성 설치
+uv venv
+uv sync
+
+# 4. 데이터베이스 초기화
+python migrate_add_max_buy_amount.py
+python migrate_add_coins_table.py
+python sync_coins.py
+
+# 5. 서버 시작
+./deploy.sh local
+# 또는
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 2. 의존성 설치
+### 운영 환경 배포
 
+**간단한 배포 (권장)**
 ```bash
-# uv 패키지 매니저 사용 (권장)
-uv pip install -e .
+# Docker 사용
+./deploy.sh docker
 
-# 또는 pip 사용
-pip install -e .
+# 로그 확인
+docker-compose logs -f
 ```
 
-### 3. 실행
+**자세한 배포 방법은 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참조하세요.**
 
-```bash
-# FastAPI 서버 시작
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+배포 옵션:
+- 🐳 **Docker** (권장) - 컨테이너 기반 배포
+- 🔧 **systemd** - Linux 서비스로 배포
+- 🌐 **PM2** - Node.js 프로세스 매니저로 배포
 
-# 웹 브라우저에서 접속
-# http://localhost:8000
-```
+각 방법에 대한 상세 가이드, 역방향 프록시 설정, 모니터링, 보안 설정 등은 배포 가이드에서 확인할 수 있습니다.
 
 ## 📖 사용 방법
 

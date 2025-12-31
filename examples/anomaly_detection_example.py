@@ -150,8 +150,8 @@ def monitor_continuously(api_key, api_secret, coins, interval_seconds=300):
 def main():
     """메인 함수"""
     # API 키 설정 (실제 키로 변경하세요)
-    API_KEY = ""  # Bithumb API 키
-    API_SECRET = ""  # Bithumb API 시크릿
+    API_KEY = "34ed1c9f39c75f958dd523f314552b668ddd93e88f6c29b6"  # Bithumb API 키
+    API_SECRET = "ZDJmMmU0NWUzYTNhMjY5ZDFkOWMzM2M2NTM5MjhhYTA1M2Y1MTU1NTI0Njk4ZmQwOWRlNzg1NmYyOWIwODA3"  # Bithumb API 시크릿
 
     if not API_KEY or not API_SECRET:
         print("⚠️ API 키와 시크릿을 설정해주세요!")
@@ -159,8 +159,8 @@ def main():
         return
 
     # 모니터링 설정
-    COINS = ["BTC", "ETH", "XRP"]  # 모니터링할 코인 목록
-    MODE = "once"  # "once" 또는 "continuous"
+    COINS = ["ETH", "XRP", "DOGE"]  # 모니터링할 코인 목록
+    MODE = "continuous"  # "once" 또는 "continuous"
     CHECK_INTERVAL = 300  # 지속 모드일 때 체크 간격 (초)
 
     print_separator()

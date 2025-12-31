@@ -535,6 +535,9 @@ class BithumbAPI:
     def get_available_coins(self) -> list:
         """Get list of all available coins on Bithumb.
 
+        Note: This method is kept for backward compatibility.
+        For new code, use coin_sync.get_coins_from_db() instead.
+
         Returns:
             List of coin symbols (e.g., ["BTC", "ETH", "XRP", ...])
         """
@@ -548,7 +551,7 @@ class BithumbAPI:
         except Exception as e:
             print(f"Error getting available coins: {e}")
             # Return default list as fallback
-            return ["BTC", "ETH", "XRP", "ADA", "DOGE", "SOL", "DOT", "AVAX", "LINK", "MATIC"]
+            return ["BTC", "ETH", "XRP", "ADA", "DOGE", "SOL", "DOT", "AVAX", "MATIC", "LINK"]
 
 
 # Global instance
