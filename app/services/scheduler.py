@@ -255,13 +255,15 @@ class TradingScheduler:
 
             sub_strategies = []
             for st in strategy_types:
-                # Ensure st is a dictionary
+                # Handle different formats of strategy definition
                 if isinstance(st, str):
+                    # Try to parse as JSON first
                     try:
                         st = json.loads(st)
                     except json.JSONDecodeError:
-                        logger.error(f"Invalid strategy definition: {st}")
-                        continue
+                        # If it's just a strategy type name (e.g., "moving_average")
+                        # convert it to proper format with default params
+                        st = {"type": st, "params": {}}
 
                 if not isinstance(st, dict):
                     logger.error(f"Strategy definition is not a dict: {st}")
