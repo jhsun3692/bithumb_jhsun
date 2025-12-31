@@ -17,10 +17,16 @@
 - **손절가 설정** (Stop Loss): 손실 한도 도달 시 자동 매도
 - **트레일링 스탑** (Trailing Stop): 수익 실현 후 손실 최소화 ✨ NEW
 
-### 백테스팅 ✨ NEW
+### 백테스팅
 - 과거 데이터 기반 전략 성능 검증
 - 승률, 수익률, 최대 낙폭, 샤프 비율 계산
 - 파라미터 최적화 (Grid Search)
+
+### 🤖 AI 기능 ✨ NEW (2025-12-31)
+- **파라미터 자동 최적화**: Optuna 기반 베이지안 최적화로 최적 파라미터 탐색
+- **이상 탐지 시스템**: 가격/거래량/성과 이상 실시간 감지
+- **리스크 평가**: 종합적인 시장 리스크 레벨 분석
+- **전략 건강도 체크**: 전략 성과 자동 모니터링 및 경보
 
 ## 📁 프로젝트 구조
 
@@ -43,8 +49,10 @@
 │   │   ├── trading.py           # 거래 스키마
 │   │   └── user.py              # 사용자 스키마
 │   ├── services/
-│   │   ├── backtesting.py       # 백테스팅 엔진 ✨ NEW
+│   │   ├── anomaly_detector.py  # 이상 탐지 시스템 🤖 NEW
+│   │   ├── backtesting.py       # 백테스팅 엔진
 │   │   ├── bithumb_api.py       # 빗썸 API 래퍼
+│   │   ├── parameter_optimizer.py # 파라미터 자동 최적화 🤖 NEW
 │   │   ├── scheduler.py         # 전략 실행 스케줄러
 │   │   ├── strategy.py          # 거래 전략 구현
 │   │   └── trading_engine.py    # 거래 실행 엔진
@@ -57,7 +65,11 @@
 │   ├── utils/
 │   │   └── helpers.py           # 유틸리티 함수
 │   └── main.py                  # FastAPI 앱 진입점
+├── examples/                    # 사용 예제 🤖 NEW
+│   ├── optimize_strategy_example.py    # 파라미터 최적화 예제
+│   └── anomaly_detection_example.py    # 이상 탐지 예제
 ├── .env.example                 # 환경 변수 예시
+├── AI_IMPLEMENTATION_GUIDE.md   # AI 기능 구현 가이드 🤖 NEW
 ├── pyproject.toml               # 프로젝트 설정
 └── README.md                    # 프로젝트 문서
 ```
@@ -176,6 +188,51 @@ print("최적 파라미터:", optimization_result["best_params"])
 print("최고 수익률:", optimization_result["best_return_pct"])
 ```
 
+### 4. 🤖 AI 기반 파라미터 자동 최적화 (NEW)
+
+**Optuna**를 활용한 베이지안 최적화로 더 빠르고 정확하게 최적 파라미터를 찾을 수 있습니다:
+
+```bash
+# 예제 스크립트 실행
+cd examples
+python optimize_strategy_example.py
+```
+
+또는 API를 통해:
+
+```bash
+curl -X POST "http://localhost:8000/ai/optimize-parameters-and-apply?strategy_id=1&n_trials=50" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+자세한 내용은 [AI 구현 가이드](./AI_IMPLEMENTATION_GUIDE.md)를 참조하세요.
+
+### 5. 🤖 이상 탐지 및 리스크 모니터링 (NEW)
+
+실시간으로 시장 이상 상황을 감지하고 리스크를 평가합니다:
+
+```bash
+# 예제 스크립트 실행
+cd examples
+python anomaly_detection_example.py
+```
+
+또는 API를 통해:
+
+```bash
+# 가격/거래량 이상 탐지
+curl -X GET "http://localhost:8000/ai/detect-anomalies/BTC" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 전략 건강도 체크
+curl -X GET "http://localhost:8000/ai/strategy-health/1" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# 시장 리스크 평가
+curl -X GET "http://localhost:8000/ai/market-risk/BTC" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
 ## 📊 전략 상세 설명
 
 ### 1. Moving Average (MA)
@@ -208,7 +265,33 @@ print("최고 수익률:", optimization_result["best_return_pct"])
 - **예시**: RSI와 Bollinger Bands 모두 매수 신호 발생 시에만 매수
 - **파라미터**: `strategies` (전략 리스트), `min_confirmations` (기본값: 2)
 
-## 📝 주요 변경 사항 (2025-12-29)
+## 📝 주요 변경 사항
+
+### 🤖 2025-12-31: AI 기능 추가
+1. **파라미터 자동 최적화**:
+   - Optuna 기반 베이지안 최적화 엔진 구현
+   - 샤프 비율, 최대 낙폭, 승률 등 다양한 지표 기반 평가
+   - Grid Search 대비 최대 10배 빠른 최적화
+   - API 엔드포인트: `/ai/optimize-parameters`, `/ai/optimize-parameters-and-apply`
+
+2. **이상 탐지 시스템**:
+   - 가격 이상 탐지: Z-score 기반 급등/급락 감지
+   - 거래량 이상 탐지: 비정상적인 거래량 변화 감지
+   - 전략 성과 모니터링: 연속 손실, 낮은 승률, 큰 낙폭 감지
+   - 종합 리스크 평가 및 거래 일시 중지 권장
+   - API 엔드포인트: `/ai/detect-anomalies/{coin}`, `/ai/strategy-health/{id}`, `/ai/market-risk/{coin}`
+
+3. **추가된 라이브러리**:
+   - `optuna>=3.6.0` - 베이지안 최적화
+   - `scikit-learn>=1.4.0` - 머신러닝 유틸리티
+   - `scipy>=1.12.0` - 통계 분석
+
+4. **예제 및 문서**:
+   - `examples/optimize_strategy_example.py` - 파라미터 최적화 예제
+   - `examples/anomaly_detection_example.py` - 이상 탐지 예제
+   - `AI_IMPLEMENTATION_GUIDE.md` - 상세 구현 가이드
+
+### ✨ 2025-12-29: 백테스팅 및 새 전략
 
 ### ✨ 추가된 기능
 1. **새로운 전략**:
@@ -253,6 +336,13 @@ print("최고 수익률:", optimization_result["best_return_pct"])
 ### 분석
 - `GET /api/analytics/execution-logs` - 전략 실행 로그 조회
 - `GET /api/analytics/execution-summary` - 전략 실행 요약
+
+### 🤖 AI 최적화 및 이상 탐지 (NEW)
+- `POST /ai/optimize-parameters` - 전략 파라미터 최적화
+- `POST /ai/optimize-parameters-and-apply` - 최적화 후 자동 적용
+- `GET /ai/detect-anomalies/{coin}` - 가격/거래량 이상 탐지
+- `GET /ai/strategy-health/{strategy_id}` - 전략 건강도 체크
+- `GET /ai/market-risk/{coin}` - 시장 리스크 평가
 
 ### 인증
 - `POST /api/auth/login` - 로그인

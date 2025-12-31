@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     # API settings
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    enable_docs: bool = True  # Swagger/ReDoc 문서 활성화 (프로덕션에서는 False로 설정)
 
     # Security (JWT Authentication)
     jwt_secret_key: str = "change-this-to-a-random-secret-key-in-production"
